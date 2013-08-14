@@ -12,7 +12,7 @@ setup(
     license = 'GPLv3',
     description = 'VPN Server Manage Tool',
     url='https://github.com/ftao/vpn-mgr',
-    dependency_links = ['https://github.com/tazjel/python-ifcfg/tarball/master#egg=python-ifcfg'],
+    dependency_links = ['https://github.com/ftao/python-ifcfg/tarball/master#egg=python-ifcfg'],
     install_requires=[
         'docopt',
         'python-ifcfg',
