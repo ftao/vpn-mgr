@@ -37,7 +37,7 @@ class list_sessions:
             'username' : 'username',
             'local_ip' : 'local_ip',
             'remote_ip' : 'remote_ip',
-            'since' : 'since',
+            'time' : 'time',
             'rx' : 'download',
             'tx' : 'upload',
         }
@@ -47,7 +47,7 @@ class list_sessions:
                 <td>%(username)s</td>
                 <td>%(local_ip)s</td>
                 <td>%(remote_ip)s</td>
-                <td>%(since)s</td>
+                <td>%(time)s</td>
                 <td>%(rx)s</td>
                 <td>%(tx)s</td>
             </tr>

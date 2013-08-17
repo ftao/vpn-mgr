@@ -16,7 +16,7 @@ class PPPServer(object):
     ... def test_list_user():
     ...     print PPPServer().list_users()
     >>> test_list_user()
-    [{'username': 'user1', 'tx': '2000', 'local_ip': '10.8.1.100', 'rx': '1000', 'time': '2013-08-11 20:52 ', 'device': 'ppp0', 'remote_ip': '9.9.9.9'}]
+    [{'username': 'user1', 'tx': '2000', 'local_ip': '10.8.1.100', 'rx': '1000', 'time': '2013-08-11 20:52', 'device': 'ppp0', 'remote_ip': '9.9.9.9'}]
     '''
 
     def list_users(self):
@@ -76,17 +76,22 @@ class PPPServer(object):
         ... """
         >>> records = PPPServer._parse_wtmp_output(lines)
         >>> print records[0]
-        {'username': 'user1', 'device': 'ppp34', 'time': '2013-08-11 20:52 ', 'remote_ip': '9.9.9.9'}
+        {'username': 'user1', 'device': 'ppp34', 'time': '2013-08-11 20:52', 'remote_ip': '9.9.9.9'}
         >>> print records[1]
-        {'username': 'user2.xz', 'device': 'ppp14', 'time': '2013-08-11 20:52 ', 'remote_ip': '211.211.211.211'}
+        {'username': 'user2.xz', 'device': 'ppp14', 'time': '2013-08-11 20:52', 'remote_ip': '211.211.211.211'}
+        >>> lines = """demo  ppp0         Aug  1 15:56 (211.211.211.211)"""
+        >>> records = PPPServer._parse_wtmp_output(lines)
+        >>> print records[0]
+        {'username': 'demo', 'device': 'ppp0', 'time': 'Aug  1 15:56', 'remote_ip': '211.211.211.211'}
         '''
-        pattern = re.compile(r'^(?P<username>[\w.]+)\s+(?P<device>\w+)\s+(?P<time>[\d\- :]+)\s*\((?P<remote_ip>[0-9.]+)\)')
+        pattern = re.compile(r'^(?P<username>[\w.]+)\s+(?P<device>\w+)\s+(?P<time>[a-zA-Z\d\- :]+)\s*\((?P<remote_ip>[0-9.]+)\)')
         records = []
         for line in text.split('\n'):
             line = line.strip()
             match = pattern.match(line)
             if match:
                 group = match.groupdict()
+                group['time'] = group['time'].strip()
                 records.append(group)
         return records
 
