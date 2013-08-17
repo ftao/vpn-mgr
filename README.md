@@ -45,7 +45,7 @@ Some enviroment variables are used by the web api server
 
 In production you may run 
 ```
-VPNMGR_WEB_API_KEY=some-secretk0key  VPNMGR_WEB_API_DEBUG=0 vpnmgr-web
+VPNMGR_WEB_API_KEY=some-secret-key  VPNMGR_WEB_API_DEBUG=0 vpnmgr-web
 ```
 
 API Endpoints 
