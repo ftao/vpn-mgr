@@ -11,7 +11,6 @@ urls = (
 )
 
 def auth_processor(handler): 
-    1/0
     query = web.input()
     k = query.get('k', '')
     if k != config.API_KEY:
