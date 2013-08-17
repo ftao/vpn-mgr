@@ -11,6 +11,7 @@ urls = (
 )
 
 def auth_processor(handler): 
+    1/0
     query = web.input()
     k = query.get('k', '')
     if k != config.API_KEY:
@@ -68,6 +69,7 @@ app = web.application(urls, globals())
 app.add_processor(auth_processor)
 
 def main():
+    web.config.debug = config.DEBUG
     app.run()
 
 if __name__ == "__main__":
