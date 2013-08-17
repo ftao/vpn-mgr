@@ -52,7 +52,7 @@ class PPPServer(object):
     def _get_wtmp_record(self):
         path = '/var/log/wtmp'
         try:
-            return subprocess.check_output('who %s | grep ppp' % path)
+            return subprocess.check_output('who %s | grep ppp' % path, shell=True)
         except:
             sys.stderr.write('fail to read or parse ppp login record from %s\n' % path)
             return ''
@@ -95,19 +95,19 @@ class PPPServer(object):
         '''
         >>> import mock
         >>> line = "root     14509  0.0  0.0  27852  1456 pts/38   Ss+  20:58   0:00 /usr/sbin/pppd local file /etc/ppp/pptpd-options 115200 10.10.0.1:10.10.0.133 ipparam 9.9.9.9 plugin /usr/lib/pptpd/pptpd-logwtmp.so pptpd-original-ip 9.9.9.9"
-        >>> @mock.patch('subprocess.check_output', lambda y:line)
+        >>> @mock.patch('subprocess.check_output', lambda y,**kwargs:line)
         ... def test_find_pid_by_ip():
         ...     print PPPServer()._find_pid_by_ip('10.10.0.133')
         >>> test_find_pid_by_ip()
         14509
         >>> line = ""
-        >>> @mock.patch('subprocess.check_output', lambda y:line)
+        >>> @mock.patch('subprocess.check_output', lambda y, **kwargs:line)
         ... def test_find_pid_by_ip():
         ...     print PPPServer()._find_pid_by_ip('10.10.0.133')
         >>> test_find_pid_by_ip()
         None
         '''
-        line =  subprocess.check_output('ps aux | grep "^root.*/usr/sbin/pppd.*%s"' %ip)
+        line =  subprocess.check_output('ps aux | grep "^root.*/usr/sbin/pppd.*%s"' %ip, shell=True)
         if line == "":
             return None
         return int(line.split()[1])
