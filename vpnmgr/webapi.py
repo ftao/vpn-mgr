@@ -3,11 +3,20 @@
 import web
 import json
 from vpnmgr.common import list_users, kick_user
+from vpnmgr import config
 
 urls = (
   '/session/list\.(.*)', "list_sessions",
   '/session/disconnect/(.+)', "disconnect_session",
 )
+
+def auth_processor(handler): 
+    query = web.input()
+    k = query.get('k', '')
+    if k != config.API_KEY:
+        return web.Forbidden()
+    else:
+        return handler()
 
 class list_sessions:
 
@@ -56,7 +65,7 @@ class disconnect_session:
         return {"ok" : kick_user(username)}
 
 app = web.application(urls, globals())
-#app.add_processor(auth_processor)
+app.add_processor(auth_processor)
 
 def main():
     app.run()
