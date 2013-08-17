@@ -1,3 +1,4 @@
 docopt
 pexpect
 -e git+https://github.com/ftao/python-ifcfg.git#egg=python-ifcfg
+web.py

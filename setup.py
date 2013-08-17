@@ -16,7 +16,8 @@ setup(
     install_requires=[
         'docopt',
         'python-ifcfg',
-        'pexpect'
+        'pexpect',
+        'web.py',
     ],
     classifiers = [
         'Development Status :: 3 - Alpha',
