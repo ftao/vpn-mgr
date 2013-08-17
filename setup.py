@@ -12,13 +12,19 @@ setup(
     license = 'GPLv3',
     description = 'VPN Server Manage Tool',
     url='https://github.com/ftao/vpn-mgr',
-    dependency_links = ['https://github.com/ftao/python-ifcfg/tarball/master#egg=python-ifcfg'],
+    dependency_links = ['https://github.com/ftao/python-ifcfg/tarball/master#egg=ifcfg'],
     install_requires=[
         'docopt',
-        'python-ifcfg',
+        'ifcfg',
         'pexpect',
         'web.py',
     ],
+    entry_points = {
+        'console_scripts': [
+            'vpnmgr-cli = vpnmgr.cli:main',
+            'vpnmgr-web = vpnmgr.webapi:main',
+        ],
+    },
     classifiers = [
         'Development Status :: 3 - Alpha',
         'Environment :: Linux Environment',

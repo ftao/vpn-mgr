@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 '''PPP Based VPN Server'''
-import logging
+import sys
 import os
 import re
 import subprocess
 import ifcfg
-
-logger = logging.getLogger()
 
 class PPPServer(object):
     '''PPP Based Server (PPTP/L2TP)
@@ -52,10 +50,11 @@ class PPPServer(object):
         return ifcfg.interfaces().values()
 
     def _get_wtmp_record(self):
+        path = '/var/log/wtmp'
         try:
-            return subprocess.check_output('who /var/log/wtmp | grep ppp')
+            return subprocess.check_output('who %s | grep ppp' % path)
         except:
-            logger.error('fail to read or parse ppp login record')
+            sys.stderr.write('fail to read or parse ppp login record from %s\n' % path)
             return ''
 
     def _build_device_username_ip_map(self):

@@ -2,9 +2,7 @@
 '''api main entrance'''
 import web
 import json
-from vpnmgr.vpn.ppp import PPPServer
-from vpnmgr.vpn.openvpn import list_openvpn_servers
-from vpnmgr.config import OPENVPN_CONFIG_DIR
+from vpnmgr.common import list_users, kick_user
 
 urls = (
   '/session/list\.(.*)', "list_sessions",
@@ -14,10 +12,7 @@ urls = (
 class list_sessions:
 
     def GET(self, fmt):
-        users = PPPServer().list_users()
-        for ovpn_server in list_openvpn_servers(OPENVPN_CONFIG_DIR):
-            users += ovpn_server.list_users()
-
+        users = list_users()
         if fmt == 'html':
             return self.render_html(users)
         else:
@@ -58,21 +53,13 @@ class list_sessions:
 class disconnect_session:
 
     def GET(self, username):
-        return {"ok" : self.do_disconnect(username)}
-
-    def do_disconnect(self, username):
-        ok = False
-        if PPPServer().kick_user(username):
-            ok = True
-        else:
-            for ovpn_server in list_openvpn_servers(OPENVPN_CONFIG_DIR):
-                if ovpn_server.kick_user(username):
-                    ok = True
-                    break
-        return ok
+        return {"ok" : kick_user(username)}
 
 app = web.application(urls, globals())
 #app.add_processor(auth_processor)
 
-if __name__ == "__main__":
+def main():
     app.run()
+
+if __name__ == "__main__":
+    main()
