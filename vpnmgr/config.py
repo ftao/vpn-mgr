@@ -1,1 +1,5 @@
-openvpn_servers = []
+OPENVPN_CONFIG_DIR = '/etc/openvpn/'
+
+
+
+

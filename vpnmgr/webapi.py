@@ -3,8 +3,8 @@
 import web
 import json
 from vpnmgr.vpn.ppp import PPPServer
-from vpnmgr.vpn.openvpn import OpenVPNServer
-from vpnmgr import config
+from vpnmgr.vpn.openvpn import list_openvpn_servers
+from vpnmgr.config import OPENVPN_CONFIG_DIR
 
 urls = (
   '/session/list\.(.*)', "list_sessions",
@@ -15,8 +15,8 @@ class list_sessions:
 
     def GET(self, fmt):
         users = PPPServer().list_users()
-        for endpoint in config.openvpn_servers:
-            users += OpenVPNServer(endpoint)
+        for ovpn_server in list_openvpn_servers(OPENVPN_CONFIG_DIR):
+            users += ovpn_server.list_users()
 
         if fmt == 'html':
             return self.render_html(users)
@@ -65,8 +65,8 @@ class disconnect_session:
         if PPPServer().kick_user(username):
             ok = True
         else:
-            for endpoint in config.openvpn_servers:
-                if OpenVPNServer(endpoint).kick_user(username):
+            for ovpn_server in list_openvpn_servers(OPENVPN_CONFIG_DIR):
+                if ovpn_server.kick_user(username):
                     ok = True
                     break
         return ok

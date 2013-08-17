@@ -3,6 +3,9 @@
 import fdpexpect
 import logging
 import socket
+import re
+import glob
+import os.path
 
 logger = logging.getLogger()
 
@@ -134,3 +137,83 @@ class OpenVPNServer(object):
         child.sendline('exit')
         child.close()
         return index == 0
+
+
+class OpenVPNConfParser(object):
+
+
+    @staticmethod
+    def parse_file(path):
+        with open(path, 'r') as fp:
+            return OpenVPNConfParser.parse_text(fp.read())
+
+    @staticmethod
+    def parse_text(text):
+        '''
+        >>> text = """
+        ... local 9.9.9.9
+        ... server 10.8.0.0 255.255.255.0
+        ... mssfix 1200
+        ... username-as-common-name
+        ... management 127.0.0.1 9101
+        ... """ 
+        >>> OpenVPNConfParser.parse_text(text)
+        {'management': 'tcp://127.0.0.1:9101', 'server': {'subnet': '10.8.0.0', 'mask': '255.255.255.0'}}
+        >>> text = """
+        ... local 9.9.9.9
+        ... server 10.8.0.0 255.255.255.0
+        ... mssfix 1200
+        ... username-as-common-name
+        ... management /var/run/openvpn.server.sock unix
+        ... """ 
+        >>> OpenVPNConfParser.parse_text(text)
+        {'management': 'unix:///var/run/openvpn.server.sock', 'server': {'subnet': '10.8.0.0', 'mask': '255.255.255.0'}}
+ 
+        '''
+        conf = {}
+        for line in text.split('\n'):
+            line = line.strip()
+            if line.startswith("server"):
+                _,subnet,mask = line.split()
+                conf['server']= {'subnet' : subnet, 'mask' : mask}
+            elif line.startswith("management"):
+                _,host,port = line.split(None, 2)
+                if port == "unix":
+                    endpoint = 'unix://%s' % host
+                else:
+                    endpoint = 'tcp://%s:%s' % (host, port)
+                conf['management'] = endpoint
+        return conf
+
+
+def list_openvpn_servers(config_root='/etc/openvpn/', ext='conf'):
+    '''
+    >>> import os
+    >>> import shutil
+    >>> root = '/tmp/vpnmgr-test-openvpn/'
+    >>> def setup():
+    ...     if not os.path.exists(root):
+    ...         os.makedirs(root)
+    ...     with open(os.path.join(root, 'server_udp.conf'), 'w') as fp:
+    ...         fp.write("server 10.10.10.0 255.255.255.0\\n")
+    ...         fp.write("management 127.0.0.1 9900\\n")
+    ...     with open(os.path.join(root, 'server_tcp.conf'), 'w') as fp:
+    ...         fp.write("server 10.10.10.0 255.255.255.0\\n")
+    ...         fp.write("management /var/run/openvpn.server_tcp.sock unix\\n")
+    >>> def teardown():
+    ...     shutil.rmtree(root)
+    >>> setup()
+    >>> [x.endpoint for x in list_openvpn_servers(root)]
+    ['unix:///var/run/openvpn.server_tcp.sock', 'tcp://127.0.0.1:9900']
+    >>> teardown()
+    '''
+    servers = []
+    for path in glob.glob(os.path.join(config_root, '*.%s'% ext)):
+        try:
+            conf = OpenVPNConfParser.parse_file(path)
+            if 'management' in conf:
+                servers.append(conf['management'])
+        except:
+            pass
+    return [OpenVPNServer(server) for server in servers]
+
