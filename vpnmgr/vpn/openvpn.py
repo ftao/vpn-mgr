@@ -21,12 +21,13 @@ class OpenVPNServer(object):
     ... 10.8.1.6,demo,222.65.164.43:19542,Wed Aug 14 13:19:47 2013
     ... GLOBAL STATS
     ... Max bcast/mcast queue length,0"""
+    >>> expected = [{'type' : 'openvpn', 'username': 'demo', 'tx': 9983, 'local_ip': '10.8.1.6', 'rx': 7666, 'time': 'Wed Aug 14 13:19:13 2013', 'remote_ip': '222.65.164.43'}]
     >>> @mock.patch.object(OpenVPNServer, '_connect', lambda x,y: y)
     ... @mock.patch.object(OpenVPNServer, '_get_status_text', lambda x,fd:data)
     ... def test_list_user():
-    ...     print OpenVPNServer('tcp://127.0.0.1:9900').list_users()
+    ...     return expected == OpenVPNServer('tcp://127.0.0.1:9900').list_users()
     >>> test_list_user()
-    [{'username': 'demo', 'tx': 9983, 'local_ip': '10.8.1.6', 'rx': 7666, 'time': 'Wed Aug 14 13:19:13 2013', 'remote_ip': '222.65.164.43'}]
+    True
     '''
 
     def __init__(self, endpoint):
@@ -80,6 +81,7 @@ class OpenVPNServer(object):
                 'remote_ip': client['real_address'].split(':')[0],
                 'tx' : client['tx'],
                 'rx' : client['rx'],
+                'type' : 'openvpn',
             })
         return users
 

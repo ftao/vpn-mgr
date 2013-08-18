@@ -5,18 +5,25 @@ import os
 import re
 import subprocess
 import ifcfg
+from vpnmgr.vpn.pptp import is_pptp_ip
+from vpnmgr.vpn.l2tp import is_l2tp_ip
 
 class PPPServer(object):
     '''PPP Based Server (PPTP/L2TP)
     >>> import mock
     >>> interfaces = [{'device' : 'ppp0', 'ptp' : '10.8.1.100', 'rxbytes' : '1000', 'txbytes' : '2000'}]
     >>> wtmp_records = "user1 ppp0        2013-08-11 20:52 (9.9.9.9)"
+    >>> expected = [
+    ...    {'username': 'user1', 'tx': '2000', 'local_ip': '10.8.1.100',
+    ...     'rx': '1000', 'time': '2013-08-11 20:52', 
+    ...     'device': 'ppp0', 'type' : 'pptp', 'remote_ip': '9.9.9.9'}]
     >>> @mock.patch.object(PPPServer, '_list_interfaces', lambda x:interfaces)
     ... @mock.patch.object(PPPServer, '_get_wtmp_record', lambda x:wtmp_records)
+    ... @mock.patch.object(PPPServer, '_decide_type', lambda x,user:'pptp')
     ... def test_list_user():
-    ...     print PPPServer().list_users()
+    ...     return expected == PPPServer().list_users()
     >>> test_list_user()
-    [{'username': 'user1', 'tx': '2000', 'local_ip': '10.8.1.100', 'rx': '1000', 'time': '2013-08-11 20:52', 'device': 'ppp0', 'remote_ip': '9.9.9.9'}]
+    True
     '''
 
     def list_users(self):
@@ -24,12 +31,14 @@ class PPPServer(object):
         interfaces = filter(lambda intf: 'ppp' in intf['device'], interfaces)
         users = []
         for interface in interfaces:
-            users.append({
+            user = {
                 'device' : interface['device'],
                 'local_ip' : interface['ptp'],
                 'rx' : interface['rxbytes'],
                 'tx' : interface['txbytes'],
-            })
+            }
+            user['type'] = self._decide_type(user)
+            users.append(user)
 
         device_map = self._build_device_username_ip_map()
 
@@ -45,6 +54,14 @@ class PPPServer(object):
             if pid:
                 return 0 == os.kill(pid)
         return False
+
+    def _decide_type(self, user):
+        if is_pptp_ip(user['local_ip']):
+            return 'pptp'
+        elif is_l2tp_ip(user['local_ip']):
+            return 'l2tp'
+        else:
+            return 'ppp'
 
     def _list_interfaces(self):
         return ifcfg.interfaces().values()
