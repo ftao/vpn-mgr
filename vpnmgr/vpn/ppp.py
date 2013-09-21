@@ -28,7 +28,8 @@ class PPPServer(object):
 
     def list_users(self):
         interfaces = self._list_interfaces()
-        interfaces = filter(lambda intf: 'ppp' in intf['device'], interfaces)
+        #when pptp is being setup, 'ptp' is None, ignore them
+        interfaces = filter(lambda intf: 'ppp' in intf['device'] and intf.get('ptp'), interfaces)
         users = []
         for interface in interfaces:
             user = {
