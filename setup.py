@@ -18,11 +18,14 @@ setup(
         'ifcfg',
         'pexpect',
         'web.py',
+        'pyzmq',
     ],
     entry_points = {
         'console_scripts': [
             'vpnmgr-cli = vpnmgr.cli:main',
             'vpnmgr-web = vpnmgr.webapi:main',
+            'vpnmgr-agent = vpnmgr.agent:main',
+            'vpnmgr-master = vpnmgr.master:main',
         ],
     },
     classifiers = [
