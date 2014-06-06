@@ -17,34 +17,37 @@ from vpnmgr.log import setup_logging
 class MasterNode(Node):
     node_offline_timeout = 600
 
-    def __init__(self, socket):
-        super(MasterNode, self).__init__(socket)
-        self._nodes = defaultdict(lambda : {})
+    def __init__(self, nid, socket):
+        super(MasterNode, self).__init__(nid, socket)
+        self._nodes = defaultdict(lambda : {'meta' : {}, 'data' : {}})
+        self._node_connections = {}
 
-    def run(self):
-        nodes = self._nodes
-        while True:
-            item = self.poll(timeout=5000)
-            if item is not None:
-                try:
-                    identify, msg = item
-                    self._update_node(identify, json.loads(msg))
-                except:
-                    logging.exception("fail to handle msg")
+    def handle_msg(self, msg):
+        if len(msg) != 2:
+            raise Exception("msg should contains 2 frames")
+        cid, data = msg
+        self._update_node(cid, json.loads(data))
 
-            self._check_offline_nodes(nodes)
-            for nid, username in self._check_duplicate(nodes):
-                self._kick_node_user(nid, username)
+    def handle_idle(self):
+        self._check_offline_nodes(self._nodes)
+        for nid, username in self._check_duplicate(self._nodes):
+            self._kick_node_user(nid, username)
 
-    def _update_node(self, nid, info):
+    def _update_node(self, cid, info):
+        nid = info.get('nid')
         logging.info("update node %s", nid)
-        self._nodes[nid].update(info)
-        self._nodes[nid].update({'last_update' : time.time()})
+        self._nodes[nid]['state'] = info['state']
+        self._nodes[nid]['meta'].update({
+            'last_update' : time.time(),
+            'cid' : cid,
+            'nid' : nid,
+        })
 
     def _kick_node_user(self, nid, username):
         logging.info("kick user %s from node %s", username, nid)
+        cid = self._nodes[nid]['meta']['cid']
         self.send([
-            nid,
+            cid,
             json.dumps({"action" : "kick", "username" : username})
         ])
 
@@ -52,7 +55,7 @@ class MasterNode(Node):
         now = time.time()
         offline_nodes = []
         for nid, v in nodes.iteritems():
-            if v.get('last_update', 0) + self.node_offline_timeout < now:
+            if v['meta'].get('last_update', 0) + self.node_offline_timeout < now:
                 offline_nodes.append(nid)
 
         for nid in offline_nodes:
@@ -61,7 +64,8 @@ class MasterNode(Node):
     def _check_duplicate(self, nodes):
         user_at_nodes = defaultdict(lambda : [])
         for nid, v in nodes.iteritems():
-            for user in v.get('users', []):
+            users = v.get('state', {}).get('users', [])
+            for user in users:
                 user_at_nodes[user['username']].append({
                     'nid' : nid,
                     'login_time' : user['time'],
@@ -70,7 +74,7 @@ class MasterNode(Node):
         for username, unodes in user_at_nodes.iteritems():
             if len(unodes) <= 1:
                 continue
-            unodes = sorted(unodes, lambda x:x['login_time'])
+            unodes = sorted(unodes, lambda x:x.get('login_time'))
             for item in unodes[1:]:
                 yield (item['nid'], username)
 
@@ -84,7 +88,7 @@ def main():
     socket.bind(endpoint)
 
     logging.info("start master, listen %s", endpoint)
-    master = MasterNode(socket)
+    master = MasterNode('master', socket)
     master.run()
 
 if __name__ == '__main__':
