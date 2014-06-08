@@ -10,6 +10,7 @@ import json
 import logging
 from collections import defaultdict
 from docopt import docopt
+from dateutil.parser import parse
 import zmq
 from vpnmgr.node import Node
 from vpnmgr.log import setup_logging
@@ -68,14 +69,13 @@ class MasterNode(Node):
             for user in users:
                 user_at_nodes[user['username']].append({
                     'nid' : nid,
-                    'login_time' : user['time'],
-                    'last_update' : v.get('last_update')
+                    'login_time' : time.mktime(parse(user['time']).timetuple()),
                 })
         for username, unodes in user_at_nodes.iteritems():
             if len(unodes) <= 1:
                 continue
-            unodes = sorted(unodes, lambda x:x.get('login_time'))
-            for item in unodes[1:]:
+            unodes = sorted(unodes, key=lambda x:x.get('login_time'))
+            for item in unodes[:-1]:
                 yield (item['nid'], username)
 
 def main():

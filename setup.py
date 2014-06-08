@@ -19,6 +19,7 @@ setup(
         'pexpect',
         'web.py',
         'pyzmq',
+        'python-dateutil',
     ],
     entry_points = {
         'console_scripts': [

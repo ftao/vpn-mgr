@@ -3,3 +3,4 @@ pexpect
 -e git+https://github.com/ftao/python-ifcfg.git#egg=ifcfg
 web.py
 pyzmq
+python-dateutil
