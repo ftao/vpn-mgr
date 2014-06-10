@@ -21,6 +21,10 @@ class VPNNode(Node):
         super(VPNNode, self).__init__(nid, socket)
         self._last_report = 0
 
+    def run(self):
+        self._register()
+        super(VPNNode, self).run()
+
     def handle_idle(self):
         now = time.time()
         if now - self._last_report < self.push_interval:
@@ -37,6 +41,15 @@ class VPNNode(Node):
         if msg['action'] == 'kick':
             ok = kick_user(msg['username'])
             logging.info("kick user %s result %s", msg['username'], ok)
+        elif msg['action'] == 'pull_state':
+            self._report()
+
+    def _register(self):
+        self.send([json.dumps({
+            'action' : 'register', 
+            'nid' : self.nid
+        })])
+        logging.info("register node %s to server", self.nid)
 
     def _report(self):
         users = list_users()

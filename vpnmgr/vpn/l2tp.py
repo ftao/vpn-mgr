@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 '''L2TP'''
+import os
 import logging
 from vpnmgr.util import is_ip_in_range, parse_ip_line
 
@@ -37,6 +38,8 @@ class L2TPConfParser(object):
 
 
 def is_l2tp_ip(ip, l2tp_conf_path=DEFAULT_L2TP_CONF_PATH):
+    if not os.path.exists(l2tp_conf_path):
+        return False
     conf = L2TPConfParser().parse_file(l2tp_conf_path)
     return is_ip_in_range(ip, conf.get('remote_ip', []))
 

@@ -5,7 +5,19 @@ from vpnmgr.master import MasterNode
 
 class TestMasterNode(unittest.TestCase):
 
-    def test_handle_msg(self):
+    def test_register(self):
+        n = MasterNode('master', None)
+        msg = {
+            'nid' : 'vpnnode',
+            'action' : 'register',
+        }
+        n.handle_msg(['c1', json.dumps(msg)])
+        self.assertEqual(len(n._nodes), 1)
+        self.assertTrue('vpnnode' in n._nodes)
+        self.assertEqual(n._nodes['vpnnode']['meta']['cid'], 'c1') 
+
+
+    def test_share_state(self):
         n = MasterNode('master', None)
 
         user= {
@@ -24,6 +36,8 @@ class TestMasterNode(unittest.TestCase):
         n.handle_msg(['c1', json.dumps(msg)])
 
         self.assertEqual(len(n._nodes), 1)
+        self.assertTrue('vpnnode' in n._nodes)
+        self.assertEqual(n._nodes['vpnnode']['meta']['cid'], 'c1') 
 
     @mock.patch('time.time')
     def test_check_offline(self, m1):

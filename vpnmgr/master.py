@@ -17,6 +17,7 @@ from vpnmgr.log import setup_logging
 
 class MasterNode(Node):
     node_offline_timeout = 600
+    node_pull_interval = 60
 
     def __init__(self, nid, socket):
         super(MasterNode, self).__init__(nid, socket)
@@ -27,22 +28,48 @@ class MasterNode(Node):
         if len(msg) != 2:
             raise Exception("msg should contains 2 frames")
         cid, data = msg
-        self._update_node(cid, json.loads(data))
+        data = json.loads(data)
+        if data['action'] == 'register':
+            self._handle_register(cid, data)
+        elif data['action'] == 'share_state':
+            self._update_state(cid, data)
 
     def handle_idle(self):
         self._check_offline_nodes(self._nodes)
         for nid, username in self._check_duplicate(self._nodes):
             self._kick_node_user(nid, username)
+        self._pull_state(self._nodes)
 
-    def _update_node(self, cid, info):
+    def _handle_register(self, cid, info):
         nid = info.get('nid')
-        logging.info("update node %s", nid)
+        logging.info("register node nid=%s cid=%s", nid, cid)
+        self._nodes[nid]['meta'].update({
+            'nid' : nid,
+            'cid' : cid,
+            'register_time' : time.time()
+        })
+
+    def _update_state(self, cid, info):
+        nid = info.get('nid')
+        logging.info("update node %s %s", nid, info)
         self._nodes[nid]['state'] = info['state']
         self._nodes[nid]['meta'].update({
             'last_update' : time.time(),
             'cid' : cid,
             'nid' : nid,
         })
+
+    def _pull_state(self, nodes):
+        now = time.time()
+        for nid, v in nodes.iteritems():
+            last_pull_or_update = max(v['meta'].get('last_pull', 0) or v['meta'].get('last_update'))
+            if last_pull_or_update + self.node_pull_interval <= now:
+                cid = self._nodes[nid]['meta']['cid']
+                self.send([
+                    cid,
+                    json.dumps({"action" : "pull_state", "nid" : nid})
+                ])
+                v['last_pull'] = now
 
     def _kick_node_user(self, nid, username):
         logging.info("kick user %s from node %s", username, nid)
@@ -56,9 +83,9 @@ class MasterNode(Node):
         now = time.time()
         offline_nodes = []
         for nid, v in nodes.iteritems():
-            if v['meta'].get('last_update', 0) + self.node_offline_timeout < now:
+            last_active = max(v['meta'].get('last_update', 0), v['meta'].get('register_time', 0))
+            if last_active + self.node_offline_timeout < now:
                 offline_nodes.append(nid)
-
         for nid in offline_nodes:
             del nodes[nid]
 
