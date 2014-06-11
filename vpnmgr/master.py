@@ -21,24 +21,33 @@ class MasterNode(Node):
 
     def __init__(self, nid, socket):
         super(MasterNode, self).__init__(nid, socket)
-        self._nodes = defaultdict(lambda : {'meta' : {}, 'data' : {}})
+        self._nodes = defaultdict(lambda : {'meta' : {}, 'state' : {}})
         self._node_connections = {}
+        self._state_changed = False
 
     def handle_msg(self, msg):
         if len(msg) != 2:
             raise Exception("msg should contains 2 frames")
         cid, data = msg
+        cid = cid.encode("hex")
         data = json.loads(data)
         if data['action'] == 'register':
             self._handle_register(cid, data)
         elif data['action'] == 'share_state':
             self._update_state(cid, data)
 
+        self._state_changed = True
+
     def handle_idle(self):
         self._check_offline_nodes(self._nodes)
         for nid, username in self._check_duplicate(self._nodes):
             self._kick_node_user(nid, username)
+            self._state_changed = True
+
         self._pull_state(self._nodes)
+        if self._state_changed:
+            self._dump_state()
+            self._state_changed = False
 
     def _handle_register(self, cid, info):
         nid = info.get('nid')
@@ -62,9 +71,9 @@ class MasterNode(Node):
     def _pull_state(self, nodes):
         now = time.time()
         for nid, v in nodes.iteritems():
-            last_pull_or_update = max(v['meta'].get('last_pull', 0) or v['meta'].get('last_update'))
+            last_pull_or_update = max(v['meta'].get('last_pull', 0), v['meta'].get('last_update', 0))
             if last_pull_or_update + self.node_pull_interval <= now:
-                cid = self._nodes[nid]['meta']['cid']
+                cid = self._nodes[nid]['meta']['cid'].decode('hex')
                 self.send([
                     cid,
                     json.dumps({"action" : "pull_state", "nid" : nid})
@@ -73,7 +82,7 @@ class MasterNode(Node):
 
     def _kick_node_user(self, nid, username):
         logging.info("kick user %s from node %s", username, nid)
-        cid = self._nodes[nid]['meta']['cid']
+        cid = self._nodes[nid]['meta']['cid'].decode('hex')
         self.send([
             cid,
             json.dumps({"action" : "kick", "username" : username})
@@ -104,6 +113,10 @@ class MasterNode(Node):
             unodes = sorted(unodes, key=lambda x:x.get('login_time'))
             for item in unodes[:-1]:
                 yield (item['nid'], username)
+
+    def _dump_state(self):
+        with open('state.json', 'w') as fp:
+            json.dump(self._nodes, fp, indent=2)
 
 def main():
     args = docopt(__doc__)
