@@ -15,18 +15,15 @@ setup(
     dependency_links = ['https://github.com/ftao/python-ifcfg/tarball/master#egg=ifcfg'],
     install_requires=[
         'docopt',
-        'ifcfg',
         'pexpect',
         'web.py',
-        'pyzmq',
         'python-dateutil',
     ],
     entry_points = {
         'console_scripts': [
             'vpnmgr-cli = vpnmgr.cli:main',
             'vpnmgr-web = vpnmgr.webapi:main',
-            'vpnmgr-agent = vpnmgr.agent:main',
-            'vpnmgr-master = vpnmgr.master:main',
+    #        'vpnmgr-agent = vpnmgr.agent:main',
         ],
     },
     classifiers = [

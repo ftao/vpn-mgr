@@ -1,17 +1,15 @@
 """VPN Management CLI
 
 Usage:
-  vpnmgr-cli.py list [-t TYPE] [-s SOCK]
-  vpnmgr-cli.py kick [-t TYPE] [-s SOCK] NAME
+  vpnmgr-cli.py list
+  vpnmgr-cli.py kick CONN_ID
   vpnmgr-cli.py (-h | --help)
 
 Arguments:
-  NAME     user to disconnect 
+  CONN_ID   session to kill 
 
 Options:
   -h --help               Show this screen.
-  -t=TYPE --type=TYPE     all,pptp,l2tp,openvpn, [default: all]
-  -s=SOCK --sock=SOCK     tcp or unix socket, for openvpn
 """
 
 from docopt import docopt
@@ -26,7 +24,7 @@ def main():
             print user
         sys.exit(0)
     elif args['kick']:
-        username = args['NAME']
+        conn_id = args['CONN_ID']
         if kick_user(username):
             print 'user "%s" kicked' % username
             sys.exit(0)

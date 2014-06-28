@@ -1,28 +1,42 @@
 from dateutil.parser import parse
 from dateutil.tz import tzlocal
-from vpnmgr.config import OPENVPN_CONFIG_DIR
 from vpnmgr.vpn.ppp import PPPServer
-from vpnmgr.vpn.openvpn import list_openvpn_servers
+from vpnmgr.vpn.openvpn import OpenVPNServer
+from vpnmgr.vpn.ipsec import IPSecServer
+from vpnmgr.config import get_config
+import logging
+
+def list_services(conf):
+    return [
+        PPPServer(conf['pptp_ip_range'], conf['l2tp_ip_range'])
+    ] + [
+        OpenVPNServer(item['name'], item['endpoint']).list_users()
+        for item in conf['openvpn_instances']
+    ] + [
+        IPSecServer(item) for item in conf['ipsec_instances']
+    ]
 
 def list_users():
-    users = PPPServer().list_users()
-    for ovpn_server in list_openvpn_servers(OPENVPN_CONFIG_DIR):
-        users += ovpn_server.list_users()
+    conf = get_config()
+    users = []
+    for service in list_services(conf):
+        try:
+            users = users + service.list_users()
+        except:
+            logging.exception("fail to list users for %s", service)
     for user in users:
         if 'time' in user:
             user['time'] = parse(user['time']).replace(tzinfo=tzlocal()).isoformat()
     return users
 
-def kick_user(username):
-    ok = False
-    if PPPServer().kick_user(username):
-        ok = True
-    else:
-        for ovpn_server in list_openvpn_servers(OPENVPN_CONFIG_DIR):
-            if ovpn_server.kick_user(username):
-                ok = True
-                break
-    return ok
-
+def kick_user(conn_id):
+    conf = get_config()
+    for service in list_services(conf):
+        try:
+            if service.kick_user(conn_id):
+                return True
+        except:
+            logging.exception("fail to kick for service %s", service)
+    return False
 
 

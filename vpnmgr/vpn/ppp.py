@@ -1,7 +1,41 @@
 #!/usr/bin/env python
 '''PPP Based Server (PPTP/L2TP)
 >>> import mock
+>>> lines = """
+... lo        Link encap:Local Loopback  
+...           inet addr:127.0.0.1  Mask:255.0.0.0
+...           inet6 addr: ::1/128 Scope:Host
+...           UP LOOPBACK RUNNING  MTU:65536  Metric:1
+...           RX packets:18261865 errors:0 dropped:0 overruns:0 frame:0
+...           TX packets:18261865 errors:0 dropped:0 overruns:0 carrier:0
+...           collisions:0 txqueuelen:0 
+...           RX bytes:917050786 (917.0 MB)  TX bytes:917050786 (917.0 MB)
+... 
+... ppp0      Link encap:Point-to-Point Protocol  
+...           inet addr:10.9.0.1  P-t-P:10.9.0.30  Mask:255.255.255.255
+...           UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1500  Metric:1
+...           RX packets:20144 errors:0 dropped:0 overruns:0 frame:0
+...           TX packets:18000 errors:0 dropped:0 overruns:0 carrier:0
+...           collisions:0 txqueuelen:3 
+...           RX bytes:3670473 (3.6 MB)  TX bytes:9732393 (9.7 MB)
+... 
+... ppp1      Link encap:Point-to-Point Protocol  
+...           inet addr:10.10.0.1  P-t-P:10.10.0.100  Mask:255.255.255.255
+...           UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1496  Metric:1
+...           RX packets:2234 errors:0 dropped:0 overruns:0 frame:0
+...           TX packets:2093 errors:0 dropped:0 overruns:0 carrier:0
+...           collisions:0 txqueuelen:3 
+...           RX bytes:311373 (311.3 KB)  TX bytes:984397 (984.3 KB)
+... """
+>>> PPPServer._get_ifconfig_result = mock.Mock(return_value=lines)
 >>> pptp_ip_range, l2tp_ip_range = ["10.10.0.100", "10.10.0.200"], ["10.9.0.2", "10.9.0.250"]
+>>> intfs = PPPServer(pptp_ip_range, l2tp_ip_range)._list_interfaces()
+>>> print len(intfs)
+3
+>>> print len([x for x in intfs if 'ptp' in x])
+2
+>>> print (intfs[1]['ptp'], intfs[2]['ptp'])
+('10.9.0.30', '10.10.0.100')
 >>> interfaces = [{'device' : 'ppp0', 'ptp' : '10.10.0.100', 'rxbytes' : '1000', 'txbytes' : '2000'}]
 >>> expected = [{'service': 'pptp', 'rx': '1000', 'conn_id': 'ppp0', 'tx': '2000', 'virtual_ip': '10.10.0.100'}]
 >>> PPPServer._list_interfaces = mock.Mock(return_value=interfaces)
@@ -23,8 +57,8 @@ None
 '''
 
 import os
+import re
 import subprocess
-import ifcfg
 from vpnmgr.util import is_ip_in_range
 from vpnmgr.vpn.base import BaseVPNServer
 
@@ -65,9 +99,37 @@ class PPPServer(BaseVPNServer):
         else:
             return 'ppp'
 
+    def _get_ifconfig_result(self):
+        return subprocess.check_output('ifconfig', shell=True)
+        
     def _list_interfaces(self):
-        return ifcfg.interfaces().values()
+        return self._parse_ifconfig_result(self._get_ifconfig_result())
 
+    def _parse_ifconfig_result(self, text):
+        start_pattern = '(?P<device>^[a-zA-Z0-9:]+)(.*)Link encap:(.*).*'
+        patterns = [
+            '.*(inet addr:)(?P<inet>[^\s]*).*',
+            '.*(P-t-P:)(?P<ptp>[^\s]*).*',
+            '.*(RX bytes:)(?P<rxbytes>\d+).*',
+            '.*(TX bytes:)(?P<txbytes>\d+).*',
+        ]
+        interfaces = []
+        last_record = {}
+        for line in text.split("\n"):
+            match = re.search(start_pattern, line)
+            if match:
+                if last_record:
+                    interfaces.append(last_record)
+                last_record = match.groupdict()
+                continue
+            for pattern in patterns:
+                match = re.search(pattern, line)
+                if match:
+                    last_record.update(match.groupdict())       
+        if last_record:
+            interfaces.append(last_record)
+        return interfaces
+                
     def _find_pid_by_ip(self, ip):
         line =  subprocess.check_output('ps aux | grep "^root.*/usr/sbin/pppd.*%s"' %ip, shell=True)
         if line == "":
