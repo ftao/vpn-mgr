@@ -58,6 +58,7 @@ None
 
 import os
 import re
+import signal
 import subprocess
 from vpnmgr.util import is_ip_in_range
 from vpnmgr.vpn.base import BaseVPNServer
@@ -91,7 +92,7 @@ class PPPServer(BaseVPNServer):
     def _disconnect_by_ip(self, ip):
         pid = self._find_pid_by_ip(ip)
         if pid:
-            return 0 == os.kill(pid)
+            return 0 == os.kill(pid, signal.SIGKILL)
         return False
 
     def _decide_type(self, user):

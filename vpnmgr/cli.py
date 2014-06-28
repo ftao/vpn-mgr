@@ -25,11 +25,11 @@ def main():
         sys.exit(0)
     elif args['kick']:
         conn_id = args['CONN_ID']
-        if kick_user(username):
-            print 'user "%s" kicked' % username
+        if kick_user(conn_id):
+            print 'user "%s" kicked' % conn_id
             sys.exit(0)
         else:
-            print 'user "%s" not found' % username
+            print 'user "%s" not found' % conn_id
             sys.exit(-1)
 
 if __name__ == '__main__':
