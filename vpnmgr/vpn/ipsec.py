@@ -35,14 +35,13 @@ test
 >>> print len(users)
 0
 '''
-
-
 import re
-import logging
 import subprocess
-logger = logging.getLogger()
+from vpnmgr.vpn.base import BaseVPNServer
 
-class IPSecServer(object):
+IPSEC_BIN = '/usr/sbin/ipsec'
+
+class IPSecServer(BaseVPNServer):
     "IPSEC Server"
 
     def __init__(self, ipsec_conf_name="ikev1"):
@@ -59,11 +58,11 @@ class IPSecServer(object):
 
         return users
 
-    def kick_user(self, conn_id):
-        return 0 == subprocess.call(["ipsec", "down", conn_id], shell=True)
+    def _disconnect_by_conn_id(self, conn_id):
+        return 0 == subprocess.call([IPSEC_BIN, "down", conn_id], shell=True)
 
     def _get_ipsec_status(self):
-        return subprocess.check_output(["ipsec", "statusall", self.ipsec_conf_name], shell=True)
+        return subprocess.check_output([IPSEC_BIN, "statusall", self.ipsec_conf_name], shell=True)
 
     @staticmethod
     def _parse_ipsec_status_output(text, ipsec_conf_name):
