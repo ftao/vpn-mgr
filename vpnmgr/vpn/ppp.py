@@ -84,6 +84,10 @@ class PPPServer(BaseVPNServer):
             users.append(user)
         return users
 
+    def _disconnect_by_conn_id(self, conn_id):
+        ip = self._find_ip_by_conn_id(conn_id)
+        return self._disconnect_by_ip(ip)
+
     def _disconnect_by_ip(self, ip):
         pid = self._find_pid_by_ip(ip)
         if pid:

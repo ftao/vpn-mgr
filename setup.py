@@ -18,6 +18,7 @@ setup(
         'pexpect',
         'web.py',
         'python-dateutil',
+        'PyYaml',
     ],
     entry_points = {
         'console_scripts': [

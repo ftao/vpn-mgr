@@ -2,3 +2,4 @@ docopt
 pexpect
 web.py
 python-dateutil
+PyYaml

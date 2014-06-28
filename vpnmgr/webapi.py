@@ -3,7 +3,6 @@
 import web
 import json
 from vpnmgr.common import list_users, kick_user
-from vpnmgr import config
 
 urls = (
   '/session/list\.(.*)', "list_sessions",
@@ -11,12 +10,7 @@ urls = (
 )
 
 def auth_processor(handler): 
-    query = web.input()
-    k = query.get('k', '')
-    if k != config.API_KEY:
-        return web.Forbidden()
-    else:
-        return handler()
+    return handler()
 
 class list_sessions:
 
@@ -35,7 +29,7 @@ class list_sessions:
         title = {
             'type' : 'type',
             'username' : 'username',
-            'local_ip' : 'local_ip',
+            'virtual_ip' : 'virtual_ip',
             'remote_ip' : 'remote_ip',
             'time' : 'time',
             'rx' : 'download',
@@ -43,9 +37,9 @@ class list_sessions:
         }
         row_template = '''
             <tr>
-                <td>%(type)s</td>
+                <td>%(service)s</td>
                 <td>%(username)s</td>
-                <td>%(local_ip)s</td>
+                <td>%(virutal_ip)s</td>
                 <td>%(remote_ip)s</td>
                 <td>%(time)s</td>
                 <td>%(rx)s</td>
@@ -61,14 +55,13 @@ class list_sessions:
 
 class disconnect_session:
 
-    def GET(self, username):
-        return {"ok" : kick_user(username)}
+    def GET(self, conn_id):
+        return {"ok" : kick_user(conn_id)}
 
 app = web.application(urls, globals())
 app.add_processor(auth_processor)
 
 def main():
-    web.config.debug = config.DEBUG
     app.run()
 
 if __name__ == "__main__":
