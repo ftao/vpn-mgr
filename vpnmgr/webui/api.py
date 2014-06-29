@@ -13,13 +13,6 @@ class list_connections:
 
     def GET(self):
         users = list_users()
-        users += [{
-            "service": "ppp", 
-            "rx": "2639612", 
-            "conn_id": "ppp0", 
-            "tx": "3785448", 
-            "virtual_ip": "10.10.0.100"
-        }]
         return json.dumps(users, indent=2)
 
 class kill_connection:
