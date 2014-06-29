@@ -18,7 +18,7 @@ def parse_ip_line(line):
 
 def is_ip_in_range(ip, ip_range):
     '''
-    >>> ip_range = [('10.10.0.13', '10.10.0.200'), '10.10.1.20']
+    >>> ip_range = ['10.10.0.13', '10.10.0.200']
     >>> is_ip_in_range('10.10.0.9', ip_range)
     False
     >>> is_ip_in_range('10.10.0.10', ip_range)
@@ -40,12 +40,7 @@ def is_ip_in_range(ip, ip_range):
     def ip2inttuple(ip):
         return tuple([int(x) for x in ip.split('.')])
 
-    for item in ip_range:
-        if type(item) is tuple:
-            if (ip2inttuple(ip) >= ip2inttuple(item[0]) 
-                and ip2inttuple(ip) <= ip2inttuple(item[1])):
-                return True
-        else:
-            if ip2inttuple(ip) == ip2inttuple(item):
-                return True
+    if (ip2inttuple(ip) >= ip2inttuple(ip_range[0]) 
+	and ip2inttuple(ip) <= ip2inttuple(ip_range[1])):
+	return True
     return False
