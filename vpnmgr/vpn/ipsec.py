@@ -64,7 +64,7 @@ class IPSecServer(BaseVPNServer):
         return 'no connection' not in output
 
     def _get_ipsec_status(self):
-        return subprocess.check_output([IPSEC_BIN, "statusall", self.ipsec_conf_name], shell=True)
+        return subprocess.check_output([IPSEC_BIN, "statusall", self.ipsec_conf_name])
 
     @staticmethod
     def _parse_ipsec_status_output(text, ipsec_conf_name):
@@ -109,3 +109,7 @@ class IPSecServer(BaseVPNServer):
                     records.append(last_record)
                     last_record = None
         return records
+
+if __name__ == "__main__":
+    s = IPSecServer()
+    print s.list_users()
