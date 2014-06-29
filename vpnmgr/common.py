@@ -29,14 +29,12 @@ def list_users():
             user['time'] = parse(user['time']).replace(tzinfo=tzlocal()).isoformat()
     return users
 
-def kick_user(conn_id):
+def kick_user(conn_id=None, virtual_ip=None):
     conf = get_config()
     for service in list_services(conf):
         try:
-            if service.kick_user(conn_id):
+            if service.kick_user(conn_id, virtual_ip):
                 return True
         except:
             logging.exception("fail to kick for service %s", service)
     return False
-
-

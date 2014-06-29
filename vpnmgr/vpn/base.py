@@ -17,8 +17,8 @@ class BaseVPNServer(object):
                 return True
         return False
 
-    def _disconnect_by_conn_id(self):
+    def _disconnect_by_conn_id(self, conn_id):
         return False
 
-    def _disconnect_by_ip(self):
+    def _disconnect_by_ip(self, ip):
         return False

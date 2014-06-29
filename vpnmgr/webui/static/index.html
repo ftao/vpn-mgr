@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css"/>
+    <script type="text/javascript" src="/static/js/jquery-1.11.1.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>VPN-MGR WEB UI</h1>
+
+      <h2>Active Connections</h2>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Conn Id</th>
+            <th>Serivce</th>
+            <th>Virtual IP</th>
+            <th>Remote IP</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+
+    </div>
+    <script type="text/javascript">
+      $(function(){
+          var list_url = '/api/connection/list/';
+          //var list_url = './list.json';
+          var kick_url = '/api/connection/kill/';
+          var container = $('tbody');
+
+          function list_connections(){
+            $.getJSON(list_url, function(data){
+              render_connections(data);
+            });
+          }
+          function disconnect(conn_id, virtual_ip){
+            $.ajax({
+              'url' : kick_url, 
+              'dataType' : 'json',
+              'method' : 'POST',
+              'data' : $.param({"conn_id" : conn_id, "virtual_ip" : virtual_ip}),
+              'success' : function(data){
+                  console.log('response', data);
+                  list_connections();
+              }
+            })
+          };
+          function render_connections(connections){
+            container.empty();
+            $.each(connections, function(i, conn){
+              container.append(
+                "<tr>" + 
+                "<td>" + conn.conn_id + "</td>" +
+                "<td>" + conn.service + "</td>" +
+                "<td>" + conn.virtual_ip + "</td>" +
+                "<td>" + conn.remote_ip + "</td>" +
+                "<td><button conn_id='" + conn.conn_id + "' virtual_ip='" + conn.virtual_ip + "'>Disconnect</button></td>" +
+                "</tr>" 
+              );
+            });
+            container.find('button').click(function(e){
+              disconnect($(this).attr('conn_id'), $(this).attr('virtual_ip'));
+            });
+          }
+          list_connections();
+      });
+    </script>
+  </body>
+</html>
+

@@ -36,6 +36,7 @@ test
 0
 '''
 import re
+import logging
 import subprocess
 from vpnmgr.vpn.base import BaseVPNServer
 
@@ -59,7 +60,8 @@ class IPSecServer(BaseVPNServer):
         return users
 
     def _disconnect_by_conn_id(self, conn_id):
-        return 0 == subprocess.call([IPSEC_BIN, "down", conn_id], shell=True)
+        output = subprocess.check_output([IPSEC_BIN, "down", conn_id])
+        return 'no connection' not in output
 
     def _get_ipsec_status(self):
         return subprocess.check_output([IPSEC_BIN, "statusall", self.ipsec_conf_name], shell=True)
