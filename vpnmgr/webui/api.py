@@ -24,6 +24,8 @@ class kill_connection:
 
 app = web.application(urls, globals())
 
+application = app.wsgifunc()
+
 def main():
     app.run()
 
