@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''OpenVPN'''
-import fdpexpect
+from pexpect import fdpexpect
 import logging
 import socket
 
